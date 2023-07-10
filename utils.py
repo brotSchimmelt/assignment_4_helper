@@ -36,7 +36,7 @@ def check_for_empty_text_fields(
     if result:
         print(f"There are empty text fields. Found here: {empty_fields}")
     else:
-        print("No empty text fields found.")
+        print(0)
 
     return None
 
