@@ -65,12 +65,10 @@ def get_dfs_for_exploration(dataframes: List[pd.DataFrame]) -> List[pd.DataFrame
         df["length_reduction"] = abs(df["conclusion_len"] / df["argument_len"] - 1)
 
         # count the number of sentences in the argument and conclusion
-        df["argument_sentence_count"] = df["argument"].apply(
-            lambda x: len(nltk.sent_tokenize(x))
-        )
-        df["conclusion_sentence_count"] = df["conclusion"].apply(
-            lambda x: len(nltk.sent_tokenize(x))
-        )
+        df["arg_sentences"] = df["argument"].apply(lambda x: nltk.sent_tokenize(x))
+        df["con_sentences"] = df["conclusion"].apply(lambda x: nltk.sent_tokenize(x))
+        df["arg_sentence_count"] = df["arg_sentences"].apply(lambda x: len(x))
+        df["con_sentence_count"] = df["con_sentences"].apply(lambda x: len(x))
 
         new_dfs.append(df)
 
