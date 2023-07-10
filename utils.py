@@ -96,16 +96,15 @@ def add_features_to_df(dataframes: List[pd.DataFrame]) -> List[pd.DataFrame]:
     return result
 
 
-def build_output(df: pd.DataFrame) -> List[Dict[str, str]]:
+def build_output(df: pd.DataFrame) -> Dict[str, str]:
     """
-    Constructs a list of dicts where each contains a key-value pair
+    Constructs a dict with the 'id' and 'predicted_conclusion' columns
     from the given DataFrame.
 
     Args:
         df (pd.DataFrame): Input DataFrame with 'id' and 'predicted_conclusion' columns.
 
     Returns:
-        List[Dict[str, str]]: A list of dicts where each dict contains a
-        key-value pair from the DataFrame. Key='id', value='predicted_conclusion'.
+        Dict[str, str]: A dict with key-value pair from the DataFrame. Key='id', value='predicted_conclusion'.
     """
-    return [{row["id"]: row["predicted_conclusion"]} for _, row in df.iterrows()]
+    return {row["id"]: row["predicted_conclusion"] for _, row in df.iterrows()}
