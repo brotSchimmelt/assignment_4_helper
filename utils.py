@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 import nltk
 import pandas as pd
@@ -76,9 +76,36 @@ def get_dfs_for_exploration(dataframes: List[pd.DataFrame]) -> List[pd.DataFrame
 
 
 def add_features_to_df(dataframes: List[pd.DataFrame]) -> List[pd.DataFrame]:
-    """TODO: add docstring"""
+    """
+    Adds additional features to each DataFrame in the given list.
+
+    Args:
+        dataframes (List[pd.DataFrame]): A list of DataFrames.
+
+    Returns:
+        List[pd.DataFrame]: A list of modified DataFrames where the following features
+        are added to each DataFrame:
+        - 'sentences': Contains a list of sentences from the 'argument' column.
+        - 'word_list': Contains a list of words from the 'argument' column.
+    """
     result = []
     for df in dataframes:
         df["sentences"] = df["argument"].apply(lambda x: nltk.sent_tokenize(x))
+        df["word_list"] = df["argument"].apply(lambda x: nltk.word_tokenize(x))
         result.append(df)
     return result
+
+
+def build_output(df: pd.DataFrame) -> List[Dict[str, str]]:
+    """
+    Constructs a list of dicts where each contains a key-value pair
+    from the given DataFrame.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame with 'id' and 'predicted_conclusion' columns.
+
+    Returns:
+        List[Dict[str, str]]: A list of dicts where each dict contains a
+        key-value pair from the DataFrame. Key='id', value='predicted_conclusion'.
+    """
+    return [{row["id"]: row["predicted_conclusion"]} for _, row in df.iterrows()]
