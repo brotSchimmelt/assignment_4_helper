@@ -73,3 +73,12 @@ def get_dfs_for_exploration(dataframes: List[pd.DataFrame]) -> List[pd.DataFrame
         new_dfs.append(df)
 
     return new_dfs
+
+
+def add_features_to_df(dataframes: List[pd.DataFrame]) -> List[pd.DataFrame]:
+    """TODO: add docstring"""
+    result = []
+    for df in dataframes:
+        df["sentences"] = df["argument"].apply(lambda x: nltk.sent_tokenize(x))
+        result.append(df)
+    return result
