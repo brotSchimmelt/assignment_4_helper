@@ -80,6 +80,7 @@ def get_dfs_for_exploration(dataframes: List[pd.DataFrame]) -> List[pd.DataFrame
 def add_features_to_df(
     dataframes: List[pd.DataFrame],
     model: SentenceTransformer,
+    use_pca: bool = True,
     variance: float = 0.95,
     random_state: int = 0,
 ) -> List[pd.DataFrame]:
@@ -106,11 +107,12 @@ def add_features_to_df(
         # compute embeddings
         df["sent_embeddings"] = df["sentences"].apply(lambda x: model.encode(x))
 
-        # compute PCA for embeddings and keep 95% of variance
-        pca = PCA(n_components=variance, random_state=random_state)
-        df["pca_sent_embeddings"] = df["sent_embeddings"].apply(
-            lambda x: pca.fit_transform(x)
-        )
+        # compute PCA for embeddings and keep x% of variance
+        if use_pca:
+            pca = PCA(n_components=variance, random_state=random_state)
+            df["pca_sent_embeddings"] = df["sent_embeddings"].apply(
+                lambda x: pca.fit_transform(x)
+            )
 
         result.append(df)
     return result
