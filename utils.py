@@ -111,7 +111,23 @@ def add_features_to_df(
 
         # compute embeddings
         if model:
-            df["sent_embeddings"] = df["sentences"].apply(lambda x: model.encode(x))
+            # df["sent_embeddings"] = df["sentences"].apply(lambda x: model.encode(x))
+
+            # compute all embeddings at once
+            all_sentences = [
+                sentence for sentences in df["sentences"] for sentence in sentences
+            ]
+            sentence_indices = [
+                index
+                for index, sentences in enumerate(df["sentences"])
+                for sentence in sentences
+            ]
+            all_embeddings = model.encode(all_sentences)
+
+            # distribute the embeddings back to the rows
+            df["sent_embeddings"] = [[] for _ in range(len(df))]
+            for index, embedding in zip(sentence_indices, all_embeddings):
+                df.at[index, "sent_embeddings"].append(embedding)
 
             # compute PCA for embeddings and keep x% of variance
             if use_pca:
