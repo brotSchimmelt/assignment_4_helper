@@ -1,3 +1,4 @@
+import subprocess
 from typing import Dict, List, Union
 
 import nltk
@@ -81,6 +82,7 @@ def get_dfs_for_exploration(dataframes: List[pd.DataFrame]) -> List[pd.DataFrame
 def add_features_to_df(
     dataframes: Union[pd.DataFrame, List[pd.DataFrame]],
     model: SentenceTransformer = None,
+    columns: Union[List[str], str] = None,
     use_pca: bool = True,
     variance: float = 0.95,
     random_state: int = 0,
@@ -100,46 +102,56 @@ def add_features_to_df(
         - 'pca_sent_embeddings': Contains the PCA-transformed sentence embeddings, retaining 95% of variance.
     """
 
-    # handle single df
+    # handle single df and column
     if isinstance(dataframes, pd.DataFrame):
         dataframes = [dataframes]
+    if isinstance(columns, str):
+        columns = [columns]
+
+    if columns is None:
+        raise ValueError("No columns provided.")
 
     # use tqdm to show progress bar
     tqdm.pandas()
 
     result = []
     for df in tqdm(dataframes):
-        # split in sentences and words
-        df["sentences"] = df["argument"].apply(lambda x: nltk.sent_tokenize(x))
-        df["word_list"] = df["argument"].apply(lambda x: nltk.word_tokenize(x))
+        for col in columns:
+            # split in sentences and words
+            new_sent_col = col + "_sentences"
+            new_word_col = col + "_word_list"
+            df[new_sent_col] = df[col].apply(lambda x: nltk.sent_tokenize(x))
+            df[new_word_col] = df[col].apply(lambda x: nltk.word_tokenize(x))
 
-        # compute embeddings
-        if model:
-            # compute all embeddings at once
-            all_sentences = [
-                sentence for sentences in df["sentences"] for sentence in sentences
-            ]
-            sentence_indices = [
-                index
-                for index, sentences in enumerate(df["sentences"])
-                for sentence in sentences
-            ]
-            all_embeddings = model.encode(all_sentences)
+            # compute embeddings
+            if model:
+                # compute all embeddings at once
+                all_sentences = [
+                    sentence for sentences in df[new_sent_col] for sentence in sentences
+                ]
+                sentence_indices = [
+                    index
+                    for index, sentences in enumerate(df[new_sent_col])
+                    for sentence in sentences
+                ]
+                all_embeddings = model.encode(all_sentences)
 
-            # distribute the embeddings back to the rows
-            df["sent_embeddings"] = [[] for _ in range(len(df))]
-            for index, embedding in zip(sentence_indices, all_embeddings):
-                df.at[index, "sent_embeddings"].append(embedding)
+                # distribute the embeddings back to the rows
+                new_emb_col = col + "_sent_emb"
+                df[new_emb_col] = [[] for _ in range(len(df))]
+                for index, embedding in zip(sentence_indices, all_embeddings):
+                    df.at[index, new_emb_col].append(embedding)
 
-            # compute PCA for embeddings and keep x% of variance
-            if use_pca:
-                # fit on all embeddings of the given df
-                pca = PCA(n_components=variance, random_state=random_state)
-                pca.fit(all_embeddings)
+                # compute PCA for embeddings and keep x% of variance
+                if use_pca:
+                    # fit on all embeddings of the given df
+                    pca = PCA(n_components=variance, random_state=random_state)
+                    pca.fit(all_embeddings)
 
-                df["pca_sent_embeddings"] = df["sent_embeddings"].progress_apply(
-                    lambda x: pca.transform(x)
-                )
+                    new_pca_col = col + "_pca_emb"
+                    df[new_pca_col] = df[new_emb_col].progress_apply(
+                        lambda x: pca.transform(x)
+                    )
 
         result.append(df)
     return result
@@ -157,3 +169,18 @@ def build_output(df: pd.DataFrame) -> Dict[str, str]:
         Dict[str, str]: A dict with key-value pair from the DataFrame. Key='id', value='predicted_conclusion'.
     """
     return {row["id"]: row["predicted_conclusion"] for _, row in df.iterrows()}
+
+
+def run_evaluation(true_path: str, pred_path: str) -> int:
+    """
+    Run evaluation using given script to compare true and predicted values.
+
+    Args:
+        true_path (str): Path to the file containing the true values.
+        pred_path (str): Path to the file containing my predicted values.
+
+    Returns:
+        int: The return code of the evaluation process.
+    """
+    cmd = ["python", "eval.py", "--true", true_path, "--predictions", pred_path]
+    return subprocess.check_call(cmd)
