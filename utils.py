@@ -2,6 +2,8 @@ from typing import Dict, List
 
 import nltk
 import pandas as pd
+from sentence_transformers import SentenceTransformer
+from sklearn.decomposition import PCA
 
 nltk.download("punkt")
 
@@ -75,7 +77,9 @@ def get_dfs_for_exploration(dataframes: List[pd.DataFrame]) -> List[pd.DataFrame
     return new_dfs
 
 
-def add_features_to_df(dataframes: List[pd.DataFrame]) -> List[pd.DataFrame]:
+def add_features_to_df(
+    dataframes: List[pd.DataFrame], model: SentenceTransformer
+) -> List[pd.DataFrame]:
     """
     Adds additional features to each DataFrame in the given list.
 
@@ -87,11 +91,24 @@ def add_features_to_df(dataframes: List[pd.DataFrame]) -> List[pd.DataFrame]:
         are added to each DataFrame:
         - 'sentences': Contains a list of sentences from the 'argument' column.
         - 'word_list': Contains a list of words from the 'argument' column.
+        - 'sent_embeddings': Contains the sentence embeddings computed using the provided BERT model.
+        - 'pca_sent_embeddings': Contains the PCA-transformed sentence embeddings, retaining 95% of variance.
     """
     result = []
     for df in dataframes:
+        # split in sentences and words
         df["sentences"] = df["argument"].apply(lambda x: nltk.sent_tokenize(x))
         df["word_list"] = df["argument"].apply(lambda x: nltk.word_tokenize(x))
+
+        # compute embeddings
+        df["sent_embeddings"] = df["sentences"].apply(lambda x: model.encode(x))
+
+        # compute PCA for embeddings and keep 95% of variance
+        pca = PCA(n_components=0.95, random_state=0)
+        df["pca_sent_embeddings"] = df["sent_embeddings"].apply(
+            lambda x: pca.fit_transform(x)
+        )
+
         result.append(df)
     return result
 
