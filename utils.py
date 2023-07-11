@@ -4,6 +4,7 @@ import nltk
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 from sklearn.decomposition import PCA
+from tqdm import tqdm
 
 nltk.download("punkt")
 
@@ -103,8 +104,11 @@ def add_features_to_df(
     if isinstance(dataframes, pd.DataFrame):
         dataframes = [dataframes]
 
+    # use tqdm to show progress bar
+    tqdm.pandas()
+
     result = []
-    for df in dataframes:
+    for df in tqdm(dataframes):
         # split in sentences and words
         df["sentences"] = df["argument"].apply(lambda x: nltk.sent_tokenize(x))
         df["word_list"] = df["argument"].apply(lambda x: nltk.word_tokenize(x))
@@ -133,7 +137,7 @@ def add_features_to_df(
                 pca = PCA(n_components=variance, random_state=random_state)
                 pca.fit(all_embeddings)
 
-                df["pca_sent_embeddings"] = df["sent_embeddings"].apply(
+                df["pca_sent_embeddings"] = df["sent_embeddings"].progress_apply(
                     lambda x: pca.transform(x)
                 )
 
