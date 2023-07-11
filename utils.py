@@ -117,41 +117,25 @@ def add_features_to_df(
     result = []
     for df in tqdm(dataframes):
         for col in columns:
-            # split in sentences and words
-            new_sent_col = col + "_sentences"
             new_word_col = col + "_word_list"
-            df[new_sent_col] = df[col].apply(lambda x: nltk.sent_tokenize(x))
             df[new_word_col] = df[col].apply(lambda x: nltk.word_tokenize(x))
 
             # compute embeddings
             if model:
-                # compute all embeddings at once
-                all_sentences = [
-                    sentence for sentences in df[new_sent_col] for sentence in sentences
-                ]
-                sentence_indices = [
-                    index
-                    for index, sentences in enumerate(df[new_sent_col])
-                    for sentence in sentences
-                ]
-                all_embeddings = model.encode(all_sentences)
+                all_texts = df[col].tolist()
+                all_embeddings = model.encode(all_texts)
 
-                # distribute the embeddings back to the rows
+                # assign the embeddings back to the rows
                 new_emb_col = col + "_sent_emb"
-                df[new_emb_col] = [[] for _ in range(len(df))]
-                for index, embedding in zip(sentence_indices, all_embeddings):
-                    df.at[index, new_emb_col].append(embedding)
+                df[new_emb_col] = list(all_embeddings)
 
                 # compute PCA for embeddings and keep x% of variance
                 if use_pca:
-                    # fit on all embeddings of the given df
                     pca = PCA(n_components=variance, random_state=random_state)
-                    pca.fit(all_embeddings)
+                    reduced_embeddings = pca.fit_transform(all_embeddings)
 
                     new_pca_col = col + "_pca_emb"
-                    df[new_pca_col] = df[new_emb_col].progress_apply(
-                        lambda x: pca.transform(x)
-                    )
+                    df[new_pca_col] = list(reduced_embeddings)
 
         result.append(df)
     return result
