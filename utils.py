@@ -116,6 +116,8 @@ def add_features_to_df(
 
     result = []
     for df in tqdm(dataframes):
+        df["arg_sentences"] = df["argument"].apply(lambda x: nltk.sent_tokenize(x))
+
         for col in columns:
             new_word_col = col + "_word_list"
             df[new_word_col] = df[col].apply(lambda x: nltk.word_tokenize(x))
