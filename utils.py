@@ -111,8 +111,6 @@ def add_features_to_df(
 
         # compute embeddings
         if model:
-            # df["sent_embeddings"] = df["sentences"].apply(lambda x: model.encode(x))
-
             # compute all embeddings at once
             all_sentences = [
                 sentence for sentences in df["sentences"] for sentence in sentences
@@ -131,9 +129,12 @@ def add_features_to_df(
 
             # compute PCA for embeddings and keep x% of variance
             if use_pca:
+                # fit on all embeddings of the given df
                 pca = PCA(n_components=variance, random_state=random_state)
+                pca.fit(all_embeddings)
+
                 df["pca_sent_embeddings"] = df["sent_embeddings"].apply(
-                    lambda x: pca.fit_transform(x)
+                    lambda x: pca.transform(x)
                 )
 
         result.append(df)
