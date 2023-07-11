@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import nltk
 import pandas as pd
@@ -78,8 +78,8 @@ def get_dfs_for_exploration(dataframes: List[pd.DataFrame]) -> List[pd.DataFrame
 
 
 def add_features_to_df(
-    dataframes: List[pd.DataFrame],
-    model: SentenceTransformer,
+    dataframes: Union[pd.DataFrame, List[pd.DataFrame]],
+    model: SentenceTransformer = None,
     use_pca: bool = True,
     variance: float = 0.95,
     random_state: int = 0,
@@ -98,6 +98,11 @@ def add_features_to_df(
         - 'sent_embeddings': Contains the sentence embeddings computed using the provided BERT model.
         - 'pca_sent_embeddings': Contains the PCA-transformed sentence embeddings, retaining 95% of variance.
     """
+
+    # handle single df
+    if isinstance(dataframes, pd.DataFrame):
+        dataframes = [dataframes]
+
     result = []
     for df in dataframes:
         # split in sentences and words
@@ -105,14 +110,15 @@ def add_features_to_df(
         df["word_list"] = df["argument"].apply(lambda x: nltk.word_tokenize(x))
 
         # compute embeddings
-        df["sent_embeddings"] = df["sentences"].apply(lambda x: model.encode(x))
+        if model:
+            df["sent_embeddings"] = df["sentences"].apply(lambda x: model.encode(x))
 
-        # compute PCA for embeddings and keep x% of variance
-        if use_pca:
-            pca = PCA(n_components=variance, random_state=random_state)
-            df["pca_sent_embeddings"] = df["sent_embeddings"].apply(
-                lambda x: pca.fit_transform(x)
-            )
+            # compute PCA for embeddings and keep x% of variance
+            if use_pca:
+                pca = PCA(n_components=variance, random_state=random_state)
+                df["pca_sent_embeddings"] = df["sent_embeddings"].apply(
+                    lambda x: pca.fit_transform(x)
+                )
 
         result.append(df)
     return result
