@@ -1,3 +1,4 @@
+import json
 from typing import Dict, List, Union
 
 import nltk
@@ -244,7 +245,9 @@ def build_output(df: pd.DataFrame) -> Dict[str, str]:
     return {row["id"]: row["predicted_conclusion"] for _, row in df.iterrows()}
 
 
-def run_evaluation(true_path: str, pred_path: str) -> str:
+def get_eval_command(
+    result: Dict[str, str], data_path: str, output_path: str, file_name: str, split: str
+) -> str:
     """
     Build evaluation command for given script to compare true and predicted values.
 
@@ -255,4 +258,12 @@ def run_evaluation(true_path: str, pred_path: str) -> str:
     Returns:
         str: Command to run in terminal to evaluate the predictions.
     """
+    # get paths
+    true_path = f"{data_path}{split}_data.json"
+    pred_path = f"{output_path}{file_name}-{split}.json"
+
+    # write predictions to file
+    with open(pred_path, "w") as f:
+        json.dump(result, f)
+
     return f"python eval.py --true {true_path} --predictions {pred_path}"
