@@ -1,8 +1,11 @@
 import argparse
 import json
+import warnings
 
 from nltk import word_tokenize
 from nltk.translate.bleu_score import sentence_bleu
+
+warnings.filterwarnings("ignore")
 
 
 def main():
