@@ -127,7 +127,7 @@ def add_features_to_df(
             sentiment_pipeline = pipeline(
                 "sentiment-analysis", "distilbert-base-uncased-finetuned-sst-2-english"
             )
-            df["arg_sent_sentiment"] = df["arg_sentences"].apply(
+            df["arg_sent_sentiment"] = df["arg_sentences"].progress_apply(
                 lambda x: [sentiment_pipeline(s)[0]["score"] for s in x]
             )
             df["arg_sent_sentiment_avg"] = df["arg_sent_sentiment"].apply(
