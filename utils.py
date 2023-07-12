@@ -173,16 +173,15 @@ def build_output(df: pd.DataFrame) -> Dict[str, str]:
     return {row["id"]: row["predicted_conclusion"] for _, row in df.iterrows()}
 
 
-def run_evaluation(true_path: str, pred_path: str) -> int:
+def run_evaluation(true_path: str, pred_path: str) -> str:
     """
-    Run evaluation using given script to compare true and predicted values.
+    Build evaluation command for given script to compare true and predicted values.
 
     Args:
         true_path (str): Path to the file containing the true values.
         pred_path (str): Path to the file containing my predicted values.
 
     Returns:
-        int: The return code of the evaluation process.
+        str: Command to run in terminal to evaluate the predictions.
     """
-    cmd = ["python", "eval.py", "--true", true_path, "--predictions", pred_path]
-    return subprocess.check_call(cmd)
+    return f"python eval.py --true {true_path} --predictions {pred_path}"
