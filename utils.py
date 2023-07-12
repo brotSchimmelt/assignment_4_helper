@@ -2,10 +2,12 @@ import subprocess
 from typing import Dict, List, Union
 
 import nltk
+import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 from sklearn.decomposition import PCA
 from tqdm import tqdm
+from transformers import pipeline
 
 nltk.download("punkt")
 
@@ -86,6 +88,7 @@ def add_features_to_df(
     use_pca: bool = True,
     variance: float = 0.95,
     random_state: int = 0,
+    sentiment: bool = False,
 ) -> List[pd.DataFrame]:
     """
     Adds additional features to each DataFrame in the given list.
@@ -117,6 +120,19 @@ def add_features_to_df(
     result = []
     for df in tqdm(dataframes):
         df["arg_sentences"] = df["argument"].apply(lambda x: nltk.sent_tokenize(x))
+
+        # compute sentiment for each sentence in argument as a
+        # measure of the argumentativeness nature of the sentence
+        if sentiment:
+            sentiment_pipeline = pipeline(
+                "sentiment-analysis", "distilbert-base-uncased-finetuned-sst-2-english"
+            )
+            df["arg_sent_sentiment"] = df["arg_sentences"].apply(
+                lambda x: [sentiment_pipeline(s)[0]["score"] for s in x]
+            )
+            df["arg_sent_sentiment_avg"] = df["arg_sent_sentiment"].apply(
+                lambda x: np.mean(x)
+            )
 
         for col in columns:
             new_word_col = col + "_word_list"
