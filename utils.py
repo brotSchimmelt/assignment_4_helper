@@ -125,7 +125,9 @@ def compute_features(df: pd.DataFrame, model: SentenceTransformer) -> pd.DataFra
 
     # get list of sentences
     df["arg_sent"] = df["argument"].apply(nltk.sent_tokenize)
+    df["arg_sent_count"] = df["arg_sent"].apply(len)
     df["con_sent"] = df["conclusion"].apply(nltk.sent_tokenize)
+    df["con_sent_count"] = df["con_sent"].apply(len)
 
     # flatten the list of sentences
     arg_lengths = df["arg_sent"].apply(len)
@@ -158,6 +160,7 @@ def compute_features(df: pd.DataFrame, model: SentenceTransformer) -> pd.DataFra
 
     # get random sentence from argument sentences
     df["random_sent"] = df["arg_sent"].apply(np.random.choice)
+    df["random_sent_emb"] = df["random_sent"].apply(model.encode)
 
     return df
 
@@ -169,84 +172,6 @@ def reconstruct_list(flat_list, lengths):
         emb_list.append(flat_list[i : i + length])
         i += length
     return emb_list
-
-
-# def add_features_to_df_old(
-#     dataframes: Union[pd.DataFrame, List[pd.DataFrame]],
-#     model: SentenceTransformer = None,
-#     columns: Union[List[str], str] = None,
-#     use_pca: bool = True,
-#     variance: float = 0.95,
-#     random_state: int = 0,
-#     sentiment: bool = False,
-# ) -> List[pd.DataFrame]:
-#     """
-#     Adds additional features to each DataFrame in the given list.
-
-#     Args:
-#         dataframes (List[pd.DataFrame]): A list of DataFrames.
-
-#     Returns:
-#         List[pd.DataFrame]: A list of modified DataFrames where the following features
-#         are added to each DataFrame:
-#         - 'sentences': Contains a list of sentences from the 'argument' column.
-#         - 'word_list': Contains a list of words from the 'argument' column.
-#         - 'sent_embeddings': Contains the sentence embeddings computed using the provided BERT model.
-#         - 'pca_sent_embeddings': Contains the PCA-transformed sentence embeddings, retaining 95% of variance.
-#     """
-
-#     # handle single df and column
-#     if isinstance(dataframes, pd.DataFrame):
-#         dataframes = [dataframes]
-#     if isinstance(columns, str):
-#         columns = [columns]
-
-#     if columns is None:
-#         raise ValueError("No columns provided.")
-
-#     # use tqdm to show progress bar
-#     tqdm.pandas()
-
-#     result = []
-#     for df in tqdm(dataframes):
-#         df["arg_sentences"] = df["argument"].apply(lambda x: nltk.sent_tokenize(x))
-
-#         # compute sentiment for each sentence in argument as a
-#         # measure of the argumentativeness nature of the sentence
-#         if sentiment:
-#             sentiment_pipeline = pipeline(
-#                 "sentiment-analysis", "distilbert-base-uncased-finetuned-sst-2-english"
-#             )
-#             df["arg_sent_sentiment"] = df["arg_sentences"].progress_apply(
-#                 lambda x: [sentiment_pipeline(s)[0]["score"] for s in x]
-#             )
-#             df["arg_sent_sentiment_avg"] = df["arg_sent_sentiment"].apply(
-#                 lambda x: np.mean(x)
-#             )
-
-#         for col in columns:
-#             new_word_col = col + "_word_list"
-#             df[new_word_col] = df[col].apply(lambda x: nltk.word_tokenize(x))
-
-#             # compute embeddings
-#             if model:
-#                 all_texts = df[col].tolist()
-#                 all_embeddings = model.encode(all_texts)
-
-#                 # assign the embeddings back to the rows
-#                 new_emb_col = col + "_sent_emb"
-#                 df[new_emb_col] = list(all_embeddings)
-
-#                 # compute PCA for embeddings and keep x% of variance
-#                 if use_pca:
-#                     pca = PCA(n_components=variance, random_state=random_state)
-#                     reduced_embeddings = pca.fit_transform(all_embeddings)
-
-#                     new_pca_col = col + "_pca_emb"
-#                     df[new_pca_col] = list(reduced_embeddings)
-
-#         result.append(df)
-#     return result
 
 
 def build_output(df: pd.DataFrame) -> Dict[str, str]:
