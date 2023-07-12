@@ -119,17 +119,26 @@ def compute_features(df: pd.DataFrame, model: SentenceTransformer) -> pd.DataFra
     Returns:
         pd.DataFrame: The modified DataFrame with additional features.
     """
-    # get list of sentences
-    df["arg_sent"] = df["argument"].apply(nltk.sent_tokenize)
-    df["con_sent"] = df["conclusion"].apply(nltk.sent_tokenize)
-
     # get list of words nltk.word_tokenize
     df["arg_words"] = df["argument"].apply(nltk.word_tokenize)
     df["con_words"] = df["conclusion"].apply(nltk.word_tokenize)
 
-    # compute sentence embeddings
-    df["arg_sent_emb"] = list(model.encode(df["arg_sent"].tolist()))
-    df["con_sent_emb"] = list(model.encode(df["con_sent"].tolist()))
+    # get list of sentences
+    df["arg_sent"] = df["argument"].apply(nltk.sent_tokenize)
+    df["con_sent"] = df["conclusion"].apply(nltk.sent_tokenize)
+
+    # flatten the list of sentences
+    arg_lengths = df["arg_sent"].apply(len)
+    con_lengths = df["con_sent"].apply(len)
+    arg_flat = [sent for sublist in df["arg_sent"].tolist() for sent in sublist]
+    con_flat = [sent for sublist in df["con_sent"].tolist() for sent in sublist]
+
+    # get embeddings
+    arg_emb_flat = model.encode(arg_flat)
+    con_emb_flat = model.encode(con_flat)
+
+    df["arg_sent_emb"] = reconstruct_list(arg_emb_flat, arg_lengths)
+    df["con_sent_emb"] = reconstruct_list(con_emb_flat, con_lengths)
 
     # find least similar sentence to conclusion
     df["least_similar"] = df.apply(
@@ -151,6 +160,15 @@ def compute_features(df: pd.DataFrame, model: SentenceTransformer) -> pd.DataFra
     df["random_sent"] = df["arg_sent"].apply(np.random.choice)
 
     return df
+
+
+def reconstruct_list(flat_list, lengths):
+    emb_list = []
+    i = 0
+    for length in lengths:
+        emb_list.append(flat_list[i : i + length])
+        i += length
+    return emb_list
 
 
 # def add_features_to_df_old(
