@@ -168,7 +168,9 @@ def compute_features(df: pd.DataFrame, model: SentenceTransformer) -> pd.DataFra
     # get random sentence from arguments
     # compute embeddings on list instead of rows to speed up process
     df["random_sent"] = df["arg_sent"].apply(np.random.choice)
-    df["random_sent_emb"] = model.encode(df["random_sent"].tolist())
+    df["random_sent_emb"] = model.encode(
+        df["random_sent"].tolist()
+    ).tolist()  # I don't know why I need to do this, but it works
 
     return df
 
