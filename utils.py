@@ -89,6 +89,12 @@ def add_features_to_df(
 ) -> List[pd.DataFrame]:
     """
     Adds additional features to each DataFrame in the given list or a single DataFrame.
+    - list of words
+    - list of sentences
+    - sentence embeddings
+    - random sentence from argument
+    - most similar sentence to conclusion
+    - least similar sentence to conclusion
 
     Args:
         dataframes (Union[pd.DataFrame, List[pd.DataFrame]]): A single DataFrame or a list of DataFrames.
@@ -113,7 +119,7 @@ def compute_features(df: pd.DataFrame, model: SentenceTransformer) -> pd.DataFra
     Computes additional features for a given DataFrame using a SentenceTransformer model.
 
     Args:
-        df (pd.DataFrame): Given DataFrame.
+        df (pd.DataFrame): You're not reading all this, right?
         model (SentenceTransformer): The model used for computing sentence embeddings.
 
     Returns:
