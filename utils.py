@@ -242,13 +242,13 @@ def get_BLEU_scores(pred_data, true_path: str) -> Dict[str, float]:
 
     # Unpack all sentences into a dict where the id is the key
     # and the value the text of the sentence
-    true_ids = []
-    true_conclusions = []
-    for item in true_data:
-        true_ids.append(item["id"])
-        true_conclusions.append(item["conclusion"])
+    pred_ids = []
+    pred_conclusions = []
+    for item in pred_data:
+        pred_ids.append(item["id"])
+        pred_conclusions.append(item["conclusion"])
 
-    pred_conclusions = [pred_data[i] for i in true_ids]
+    true_conclusions = [true_data[str(i)] for i in pred_ids]
     pred_conclusions = [word_tokenize(c) for c in pred_conclusions]
     true_conclusions = [[word_tokenize(c)] for c in true_conclusions]
 
