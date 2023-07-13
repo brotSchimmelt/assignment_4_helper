@@ -236,19 +236,18 @@ def get_eval_command(
 
 
 def get_BLEU_scores(pred_data, true_path: str) -> Dict[str, float]:
-    """Just copied from the eval script, but without the print statement."""
+    """Mostly copied from the eval script, but without the print statement."""
     with open(true_path, "r") as f:
         true_data = json.load(f)
 
-    # Unpack all sentences into a dict where the id is the key
-    # and the value the text of the sentence
-    pred_ids = []
-    pred_conclusions = []
-    for item in pred_data:
-        pred_ids.append(item["id"])
-        pred_conclusions.append(item["conclusion"])
+    pred_ids = pred_data.keys()
+    pred_conclusions = pred_data.values()
 
-    true_conclusions = [true_data[str(i)] for i in pred_ids]
+    true_conclusions_dict = {
+        t["id"]: t["conclusion"] for t in true_data if t["id"] in pred_ids
+    }
+    true_conclusions = [true_conclusions_dict[i] for i in pred_ids]
+
     pred_conclusions = [word_tokenize(c) for c in pred_conclusions]
     true_conclusions = [[word_tokenize(c)] for c in true_conclusions]
 
