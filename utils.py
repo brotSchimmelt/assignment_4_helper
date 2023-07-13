@@ -129,16 +129,16 @@ def compute_features(df: pd.DataFrame, model: SentenceTransformer) -> pd.DataFra
     df["con_sent"] = df["conclusion"].apply(nltk.sent_tokenize)
     df["con_sent_count"] = df["con_sent"].apply(len)
 
-    # flatten the list of sentences
+    # flatten lists
     arg_lengths = df["arg_sent"].apply(len)
     con_lengths = df["con_sent"].apply(len)
     arg_flat = [sent for sublist in df["arg_sent"].tolist() for sent in sublist]
     con_flat = [sent for sublist in df["con_sent"].tolist() for sent in sublist]
 
-    # get embeddings
+    # get embeddings and reconstruct flattened list
+    # compute embeddings on list instead of rows to speed up process
     arg_emb_flat = model.encode(arg_flat)
     con_emb_flat = model.encode(con_flat)
-
     df["arg_sent_emb"] = reconstruct_list(arg_emb_flat, arg_lengths)
     df["con_sent_emb"] = reconstruct_list(con_emb_flat, con_lengths)
 
@@ -158,14 +158,25 @@ def compute_features(df: pd.DataFrame, model: SentenceTransformer) -> pd.DataFra
         axis=1,
     )
 
-    # get random sentence from argument sentences
+    # get random sentence from arguments
+    # compute embeddings on list instead of rows to speed up process
     df["random_sent"] = df["arg_sent"].apply(np.random.choice)
-    df["random_sent_emb"] = df["random_sent"].apply(model.encode)
+    df["random_sent_emb"] = model.encode(df["random_sent"].tolist())
 
     return df
 
 
-def reconstruct_list(flat_list, lengths):
+def reconstruct_list(flat_list: List[float], lengths: List[int]) -> List[List[float]]:
+    """
+    Reconstructs a nested list from a flat list and corresponding lengths.
+
+    Args:
+        flat_list (List[float]): A flat list of values.
+        lengths (List[int]): A list of lengths specifying the number of elements in each sub-list.
+
+    Returns:
+        List[List[float]]: A nested list constructed from the flat list, where each sub-list has a length specified by 'lengths'.
+    """
     emb_list = []
     i = 0
     for length in lengths:
