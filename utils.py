@@ -4,6 +4,7 @@ from typing import Dict, List, Union
 import nltk
 import numpy as np
 import pandas as pd
+from nltk.translate.bleu_score import sentence_bleu
 from sentence_transformers import SentenceTransformer
 from sklearn.decomposition import PCA
 from sklearn.metrics.pairwise import cosine_similarity
@@ -227,3 +228,37 @@ def get_eval_command(
         json.dump(result, f)
 
     return f"python eval.py --true {true_path} --predictions {pred_path}"
+
+
+def get_BLEU_scores(pred_data, true_path: str) -> Dict[str, float]:
+    """Just copied from the eval script, but without the print statement."""
+    with open(true_path, "r") as f:
+        true_data = json.load(f)
+
+    # Unpack all sentences into a dict where the id is the key
+    # and the value the text of the sentence
+    true_ids = []
+    true_conclusions = []
+    for item in true_data:
+        true_ids.append(item["id"])
+        true_conclusions.append(item["conclusion"])
+
+    pred_conclusions = [pred_data[str(i)] for i in true_ids]
+    pred_conclusions = [word_tokenize(c) for c in pred_conclusions]
+    true_conclusions = [[word_tokenize(c)] for c in true_conclusions]
+
+    # Calculate actual score
+    bleu1_score = sum(
+        sentence_bleu(true_c, pred_c, weights=(1, 0, 0, 0))
+        for true_c, pred_c in zip(true_conclusions, pred_conclusions)
+    ) / len(true_conclusions)
+    bleu2_score = sum(
+        sentence_bleu(true_c, pred_c, weights=(0, 1, 0, 0))
+        for true_c, pred_c in zip(true_conclusions, pred_conclusions)
+    ) / len(true_conclusions)
+    bleu_score = sum(
+        sentence_bleu(true_c, pred_c)
+        for true_c, pred_c in zip(true_conclusions, pred_conclusions)
+    ) / len(true_conclusions)
+
+    return {"bleu_1": bleu1_score, "bleu_2": bleu2_score, "bleu": bleu_score}
