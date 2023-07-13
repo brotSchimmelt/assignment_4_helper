@@ -1,9 +1,11 @@
 import json
+import warnings
 from typing import Dict, List, Union
 
 import nltk
 import numpy as np
 import pandas as pd
+from nltk import word_tokenize
 from nltk.translate.bleu_score import sentence_bleu
 from sentence_transformers import SentenceTransformer
 from sklearn.decomposition import PCA
@@ -12,6 +14,7 @@ from tqdm import tqdm
 from transformers import pipeline
 
 nltk.download("punkt")
+warnings.filterwarnings("ignore")
 
 
 def check_for_empty_text_fields(
@@ -245,7 +248,7 @@ def get_BLEU_scores(pred_data, true_path: str) -> Dict[str, float]:
         true_ids.append(item["id"])
         true_conclusions.append(item["conclusion"])
 
-    pred_conclusions = [pred_data[str(i)] for i in true_ids]
+    pred_conclusions = [pred_data[i] for i in true_ids]
     pred_conclusions = [word_tokenize(c) for c in pred_conclusions]
     true_conclusions = [[word_tokenize(c)] for c in true_conclusions]
 
